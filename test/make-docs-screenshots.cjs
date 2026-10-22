@@ -1,4 +1,4 @@
-// 生成 README 用的截图到 docs/images/。
+// 生成 README 用的截图到 docs/images/{en,zh}/（英文、中文标注各一套）。
 // 用本地模拟控制台页（test/mock-session.html，设备画面是真机截图）+ 真实加载的扩展截图，
 // 再用一个 HTML 拼图页把多张截图排版、加标注。
 // 运行：npm run docs:screenshots   （需要系统装有中文字体，否则弹窗里的中文会显示成方框）
@@ -163,16 +163,55 @@ async function openSession(page, model) {
   await pop.evaluate(() => chrome.storage.local.remove('opts'));
   await pop.close();
 
-  // ---------- 拼图排版 ----------
+  // ---------- 拼图排版（中英两套标注：docs/images/en、docs/images/zh） ----------
+  const TEXT = {
+    en: {
+      before: 'Before', after: 'After',
+      beforeSub: 'No Dynamic Island on the live screen — hard to tell what would be hidden on a real device',
+      afterSub: 'Dynamic Island drawn for the detected model; clicks still reach the device',
+      ext1: 'Turn on <b>Developer mode</b> (top right)',
+      ext2: 'Click <b>Load unpacked</b> and select the unzipped <code>devicefarm-notch-overlay</code> folder',
+      popup: [
+        ['Status', 'whether the overlay is active, the model name found on the page, and the model profile in use'],
+        ['启用 / Enable', 'master switch — uncheck to hide the overlay temporarily'],
+        ['机型 / Model', '“自动识别” (auto-detect) by default; pick a model manually if detection fails or is wrong'],
+        ['方向 / Orientation', 'keep “自动” (auto); if the cutout is on the wrong side in landscape, choose “横屏（刘海在右）” (landscape, cutout on right)'],
+        ['刘海不透明度 / Cutout opacity', 'drag left to make it semi-transparent and see what is underneath'],
+        ['屏幕圆角 / 圆角颜色 — Screen corners / corner color', 'off by default (the console already rounds the corners)']
+      ],
+      m1: '① “Unsupported model” badge', m2: '② Pick a model in the popup', m3: '③ Overlay uses the chosen model',
+      op100: 'Opacity 100% (default)', op50: 'Opacity 50%',
+      land: 'In landscape the Dynamic Island moves to the left edge. If your device is rotated the other way, choose “横屏（刘海在右）” (landscape, cutout on right) in the popup.'
+    },
+    zh: {
+      before: '安装前', after: '安装后',
+      beforeSub: '画面顶部看不到 Dynamic Island，无法判断内容会不会被挡住',
+      afterSub: '按机型自动画出 Dynamic Island，点击照常传到真机',
+      ext1: '打开右上角「开发者模式（Developer mode）」',
+      ext2: '点「加载已解压的扩展程序（Load unpacked）」，选择解压出来的 <code>devicefarm-notch-overlay</code> 文件夹',
+      popup: [
+        ['状态栏', '显示是否已叠加、页面上识别到的型号、实际使用的机型参数'],
+        ['启用', '总开关，临时不想看刘海就取消勾选'],
+        ['机型', '默认「自动识别」；识别不到或不准时手动选一个'],
+        ['方向', '一般保持「自动」；横屏时刘海方向反了就选「横屏（刘海在右）」'],
+        ['刘海不透明度', '往左拖变半透明，可以看清被挡住的内容'],
+        ['屏幕圆角 / 圆角颜色', '默认关闭（控制台已有圆角），需要更逼真时再打开']
+      ],
+      m1: '① 画面提示「未收录机型」', m2: '② 弹窗里手动选择机型', m3: '③ 按所选机型叠加',
+      op100: '不透明度 100%（默认）', op50: '不透明度 50%',
+      land: '横屏时 Dynamic Island 自动转到左侧；方向相反时在弹窗里选「横屏（刘海在右）」'
+    }
+  };
+
   const img = f => 'data:image/png;base64,' + fs.readFileSync(raw(f)).toString('base64');
   const board = await ctx.newPage();
-  async function compose(file, width, html) {
+  async function compose(dir, file, width, html) {
     await board.setViewportSize({ width, height: 400 });
-    await board.setContent(`<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><style>
-      body{margin:0;padding:24px;background:#fff;font:15px/1.6 "Noto Sans SC",system-ui,sans-serif;color:#16191f}
+    await board.setContent(`<!doctype html><html><head><meta charset="utf-8"><style>
+      body{margin:0;padding:24px;background:#fff;font:15px/1.6 system-ui,"Noto Sans","Noto Sans SC",sans-serif;color:#16191f}
       .row{display:flex;gap:28px;align-items:flex-start;justify-content:center}
       .col{display:flex;flex-direction:column;align-items:center;gap:10px}
-      .cap{font-weight:bold;font-size:16px}
+      .cap{font-weight:bold;font-size:16px;text-align:center}
       .sub{color:#5f6b7a;font-size:13px;text-align:center;max-width:320px}
       .arrow{align-self:center;font-size:34px;color:#e8381e;font-weight:bold}
       img{display:block;border-radius:8px;box-shadow:0 1px 6px rgba(0,0,0,.18)}
@@ -183,63 +222,63 @@ async function openSession(page, model) {
     await board.waitForTimeout(200);
     const h = await board.evaluate(() => document.body.scrollHeight);
     await board.setViewportSize({ width, height: h });
-    await board.screenshot({ path: path.join(OUT, file) });
+    await board.screenshot({ path: path.join(dir, file) });
   }
 
-  await compose('before-after.png', 860, `
-    <div class="row">
-      <div class="col"><div class="cap bad">安装前</div><img src="${img('before.png')}" width="300"><div class="sub">画面顶部看不到 Dynamic Island，无法判断内容会不会被挡住</div></div>
-      <div class="arrow">→</div>
-      <div class="col"><div class="cap good">安装后</div><img src="${img('after.png')}" width="300"><div class="sub">按机型自动画出 Dynamic Island，点击照常传到真机</div></div>
-    </div>`);
+  for (const [lang, t] of Object.entries(TEXT)) {
+    const dir = path.join(OUT, lang);
+    fs.mkdirSync(dir, { recursive: true });
 
-  await compose('before-after-top.png', 900, `
-    <div class="row">
-      <div class="col"><div class="cap bad">安装前</div><img src="${img('before-top.png')}" width="380"></div>
-      <div class="col"><div class="cap good">安装后</div><img src="${img('after-top.png')}" width="380"></div>
-    </div>`);
+    await compose(dir, 'before-after.png', 860, `
+      <div class="row">
+        <div class="col"><div class="cap bad">${t.before}</div><img src="${img('before.png')}" width="300"><div class="sub">${t.beforeSub}</div></div>
+        <div class="arrow">→</div>
+        <div class="col"><div class="cap good">${t.after}</div><img src="${img('after.png')}" width="300"><div class="sub">${t.afterSub}</div></div>
+      </div>`);
 
-  await compose('step1-extensions.png', 1000, `
-    <img src="${img('extensions.png')}" width="950">
-    <ol style="margin-top:14px">
-      <li><span class="n">1</span>打开右上角「开发者模式」</li>
-      <li><span class="n">2</span>点「加载已解压的扩展程序」，选择解压出来的 <code>devicefarm-notch-overlay</code> 文件夹</li>
-    </ol>`);
+    await compose(dir, 'before-after-top.png', 900, `
+      <div class="row">
+        <div class="col"><div class="cap bad">${t.before}</div><img src="${img('before-top.png')}" width="380"></div>
+        <div class="col"><div class="cap good">${t.after}</div><img src="${img('after-top.png')}" width="380"></div>
+      </div>`);
 
-  await compose('popup.png', 820, `
-    <div class="row">
-      <img src="${img('popup.png')}" width="304">
-      <ol style="max-width:440px">
-        <li><span class="n">1</span><b>状态栏</b>：显示是否已叠加、页面上识别到的型号、实际使用的机型参数</li>
-        <li><span class="n">2</span><b>启用</b>：总开关，临时不想看刘海就取消勾选</li>
-        <li><span class="n">3</span><b>机型</b>：默认「自动识别」；识别不到或不准时手动选一个</li>
-        <li><span class="n">4</span><b>方向</b>：一般保持「自动」；横屏时刘海方向反了就选「横屏（刘海在右）」</li>
-        <li><span class="n">5</span><b>刘海不透明度</b>：往左拖变半透明，可以看清被挡住的内容</li>
-        <li><span class="n">6</span><b>屏幕圆角 / 圆角颜色</b>：默认关闭（控制台已有圆角），需要更逼真时再打开</li>
-      </ol>
-    </div>`);
+    await compose(dir, 'step1-extensions.png', 1000, `
+      <img src="${img('extensions.png')}" width="950">
+      <ol style="margin-top:14px">
+        <li><span class="n">1</span>${t.ext1}</li>
+        <li><span class="n">2</span>${t.ext2}</li>
+      </ol>`);
 
-  await compose('manual-select.png', 1060, `
-    <div class="row">
-      <div class="col"><div class="cap">① 画面提示「未收录机型」</div><img src="${img('unknown.png')}" width="280"></div>
-      <div class="arrow">→</div>
-      <div class="col"><div class="cap">② 弹窗里手动选择机型</div><img src="${img('popup-manual.png')}" width="304"></div>
-      <div class="arrow">→</div>
-      <div class="col"><div class="cap">③ 按所选机型叠加</div><img src="${img('manual-after.png')}" width="280"></div>
-    </div>`);
+    await compose(dir, 'popup.png', 860, `
+      <div class="row">
+        <img src="${img('popup.png')}" width="304">
+        <ol style="max-width:480px">
+          ${t.popup.map(([k, v], i) => `<li><span class="n">${i + 1}</span><b>${k}</b>${lang === 'zh' ? '：' : ': '}${v}</li>`).join('')}
+        </ol>
+      </div>`);
 
-  await compose('opacity.png', 900, `
-    <div class="row">
-      <div class="col"><div class="cap">不透明度 100%（默认）</div><img src="${img('after-top.png')}" width="380"></div>
-      <div class="col"><div class="cap">不透明度 50%</div><img src="${img('opacity-top.png')}" width="380"></div>
-    </div>`);
+    await compose(dir, 'manual-select.png', 1060, `
+      <div class="row">
+        <div class="col"><div class="cap">${t.m1}</div><img src="${img('unknown.png')}" width="280"></div>
+        <div class="arrow">→</div>
+        <div class="col"><div class="cap">${t.m2}</div><img src="${img('popup-manual.png')}" width="304"></div>
+        <div class="arrow">→</div>
+        <div class="col"><div class="cap">${t.m3}</div><img src="${img('manual-after.png')}" width="280"></div>
+      </div>`);
 
-  await compose('landscape.png', 960, `
-    <div class="col"><img src="${img('landscape.png')}" width="900"><div class="sub" style="max-width:none">横屏时 Dynamic Island 自动转到左侧；方向相反时在弹窗里选「横屏（刘海在右）」</div></div>`);
+    await compose(dir, 'opacity.png', 900, `
+      <div class="row">
+        <div class="col"><div class="cap">${t.op100}</div><img src="${img('after-top.png')}" width="380"></div>
+        <div class="col"><div class="cap">${t.op50}</div><img src="${img('opacity-top.png')}" width="380"></div>
+      </div>`);
+
+    await compose(dir, 'landscape.png', 960, `
+      <div class="col"><img src="${img('landscape.png')}" width="900"><div class="sub" style="max-width:none">${t.land}</div></div>`);
+  }
 
   await ctx.close();
   fs.rmSync(RAW, { recursive: true, force: true });
-  console.log('screenshots written to', OUT, fs.readdirSync(OUT));
+  console.log('screenshots written to', OUT, fs.readdirSync(OUT).map(d => `${d}: ${fs.readdirSync(path.join(OUT, d)).length}`));
 })().catch(e => {
   console.error(e);
   process.exit(1);

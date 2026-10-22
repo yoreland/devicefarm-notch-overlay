@@ -1,168 +1,172 @@
 # Device Farm Notch Overlay
 
-一个 Chrome / Edge 浏览器插件：在 [AWS Device Farm](https://aws.amazon.com/device-farm/) 远程访问会话的实时画面上，叠加画出 iPhone 的**刘海 / Dynamic Island**。
+**English** | [简体中文](README.zh-CN.md)
 
-![安装前后对比](docs/images/before-after.png)
+A Chrome / Edge extension that draws the iPhone **notch / Dynamic Island** on top of the live screen of an [AWS Device Farm](https://aws.amazon.com/device-farm/) remote access session.
 
-## 为什么需要它
+![Before and after](docs/images/en/before-after.png)
 
-Device Farm 远程画面是设备的屏幕帧（矩形图像）。刘海和 Dynamic Island 是屏幕上的物理遮挡，不是像素，所以系统截图、录屏和远程画面里都看不到它们。控制台画了手机外框和屏幕圆角，但没有刘海。这样在远程调试时，很难判断某个按钮或文字在真机上会不会被挡住。
+## Why
 
-这个插件按机型把刘海 / 岛画回画面上，方便目测。
+The Device Farm live screen shows the device's screen frames, which are rectangular images. The notch and the Dynamic Island are physical parts of the phone that cover the display. They are not pixels, so they never appear in screenshots, screen recordings, or the remote live view. The console does draw a phone frame and rounded corners, but no notch. During remote testing, that makes it hard to tell whether a button or a line of text would be hidden on a real device.
 
-- **只是视觉叠加**：点击、拖动、键盘输入都会照常传到真机。叠加内容不会出现在 Device Farm 的截图和录像里。
-- **不收集数据**：只申请 `storage` 权限（保存你的设置），只在 `https://us-west-2.console.aws.amazon.com/devicefarm/*` 页面运行，不发任何网络请求。
+This extension draws the notch / Dynamic Island back onto the live screen, sized for the device model, so you can check this by eye.
+
+- **Visual only.** Clicks, drags, and keyboard input still reach the device. The overlay does not show up in Device Farm screenshots or recordings.
+- **No data collection.** The extension only requests the `storage` permission (to save your settings). It only runs on `https://us-west-2.console.aws.amazon.com/devicefarm/*` and makes no network requests.
+
+> **Note:** The extension's popup and on-screen messages are currently in Chinese. The screenshots in this guide show each Chinese label next to its English meaning.
 
 ---
 
-## 5 分钟上手
+## Quick start (5 minutes)
 
-### 第 1 步：下载插件
+### Step 1: Download the extension
 
-1. 打开本仓库的 [Releases](../../releases) 页面，在最新版本下面下载 `devicefarm-notch-overlay-vX.Y.Z.zip`。
-   - 没看到这个 zip 的话，下载 **Source code (zip)** 也可以，解压后使用里面的 `extension` 文件夹。
-2. 解压到一个**以后不会删掉**的位置，例如 `文档/devicefarm-notch-overlay`。
+1. Open the [Releases](../../releases) page and download `devicefarm-notch-overlay-vX.Y.Z.zip` from the latest release.
+   - If that zip isn't listed, download **Source code (zip)** instead, unzip it, and use the `extension` folder inside it.
+2. Unzip it somewhere you **won't delete later**, for example `Documents/devicefarm-notch-overlay`.
 
-   > Chrome 每次启动都会从这个文件夹加载插件，删掉或移动文件夹后插件就失效了。
+   > Chrome loads the extension from this folder every time it starts. If you delete or move the folder, the extension stops working.
 
-3. 打开文件夹确认一下，里面应该能看到 `manifest.json`：
+3. Open the folder and check that it contains `manifest.json`:
 
    ```
    devicefarm-notch-overlay/
-   ├── manifest.json      ← 看到它就对了
+   ├── manifest.json      ← you're in the right folder
    ├── content.js
    ├── devices.js
    ├── popup.html
    └── ...
    ```
 
-### 第 2 步：装进 Chrome
+### Step 2: Add it to Chrome
 
-1. 在 Chrome 地址栏输入 `chrome://extensions` 并回车（Edge 输入 `edge://extensions`）。
-2. 打开右上角的 **开发者模式（Developer mode）** 开关。
-3. 点左上角出现的 **加载已解压的扩展程序（Load unpacked）**。
-4. 选择第 1 步解压出来的文件夹（就是有 `manifest.json` 的那一层），点「选择」。
-5. 列表里出现 **Device Farm Notch Overlay** 卡片，就说明装好了。
+1. Type `chrome://extensions` in the address bar and press Enter (in Edge, use `edge://extensions`).
+2. Turn on **Developer mode** (top right).
+3. Click **Load unpacked**, which now appears at the top left.
+4. Select the folder from Step 1 (the one that contains `manifest.json`), then click **Select**.
+5. When a **Device Farm Notch Overlay** card appears in the list, the extension is installed.
 
-![扩展程序页面](docs/images/step1-extensions.png)
+![Extensions page](docs/images/en/step1-extensions.png)
 
-6. （推荐）点浏览器右上角的拼图图标 🧩，找到 Device Farm Notch Overlay，点旁边的图钉 📌，把它固定到工具栏，之后调设置更方便。
+6. (Recommended) Click the puzzle icon 🧩 at the top right of the browser, find Device Farm Notch Overlay, and click the pin 📌 next to it. This keeps the extension icon on the toolbar so you can open its settings quickly.
 
-> 如果 Chrome 启动时提示「请停用以开发者模式运行的扩展程序」，点 ✕ 关掉提示即可，**不要**点「停用」。
+> If Chrome shows a "Disable developer mode extensions" prompt at startup, close the prompt with ✕. **Don't** click "Disable".
 
-### 第 3 步：打开远程会话，直接看效果
+### Step 3: Open a remote session
 
-1. 照常在 Device Farm 控制台（**us-west-2 区域**）开启一个 iPhone 远程访问会话。
-2. 等设备画面出现，刘海 / Dynamic Island 会**自动**画在画面顶部，不需要任何配置。
+1. Start an iPhone remote access session in the Device Farm console (**us-west-2** region), as you normally would.
+2. Once the device screen appears, the notch / Dynamic Island is drawn at the top **automatically**. No setup is needed.
 
-   ![顶部效果](docs/images/before-after-top.png)
+   ![Top of the screen](docs/images/en/before-after-top.png)
 
-3. 没出现的话，按 `F5` 刷新一下会话页面。
+3. If it doesn't appear, refresh the session page with `F5`.
 
-到这里就可以正常使用了。下面的配置都是可选的。
+You're done. Everything below is optional.
 
 ---
 
-## 按需配置
+## Settings (optional)
 
-点工具栏上的插件图标，打开设置弹窗。改动**立即生效**，不需要刷新页面。
+Click the extension icon on the toolbar to open the settings popup. Changes apply **immediately**; you don't need to reload the page.
 
-![设置弹窗](docs/images/popup.png)
+![Settings popup](docs/images/en/popup.png)
 
-### 常见场景
+### Common situations
 
-**场景 1：画面上提示「未收录机型」**
+**1. The screen shows "未收录机型" (unsupported model)**
 
-插件没认出当前设备（比如 iPad、Android，或者特别新的机型）。在弹窗的「机型」里手动选一个最接近的 iPhone 就行，只对当前标签页生效。
+The extension didn't recognize the device (for example an iPad, an Android device, or a very new model). In the popup, pick the closest iPhone under **机型 (Model)**. The choice only applies to the current tab.
 
-![手动选择机型](docs/images/manual-select.png)
+![Pick a model manually](docs/images/en/manual-select.png)
 
-**场景 2：想看清刘海下面挡住了什么**
+**2. You want to see what the notch is covering**
 
-把「刘海不透明度」滑块往左拖，刘海会变成半透明。
+Drag the **刘海不透明度 (Cutout opacity)** slider to the left to make the notch semi-transparent.
 
-![不透明度](docs/images/opacity.png)
+![Opacity](docs/images/en/opacity.png)
 
-**场景 3：横屏时刘海在错误的一边**
+**3. In landscape, the notch is on the wrong side**
 
-插件在横屏时默认把刘海画在左侧。如果设备实际转向相反，在「方向」里选 **横屏（刘海在右）**。用完改回「自动」。
+In landscape, the extension draws the notch on the left by default. If the device is rotated the other way, set **方向 (Orientation)** to **横屏（刘海在右）(landscape, cutout on right)**. Set it back to **自动 (auto)** when you're done.
 
-![横屏](docs/images/landscape.png)
+![Landscape](docs/images/en/landscape.png)
 
-**场景 4：横屏时画面上提示「控制台把横屏画面裁成竖屏框」**
+**4. In landscape, the screen shows "横屏：控制台把横屏画面裁成竖屏框" (landscape cropped into a portrait frame)**
 
-这是控制台本身的显示方式：它把横屏画面裁进了竖向画框，刘海所在的那一边不在可见区域里，所以插件不画。属于正常现象。
+This is how the console itself displays the session in this case: it crops the landscape image into the portrait frame, so the edge where the notch would be is not visible. The extension doesn't draw the notch then. This is expected.
 
-**场景 5：临时不想看刘海**
+**5. You want to hide the notch for a while**
 
-取消勾选「启用」即可，再勾上就恢复。
+Uncheck **启用 (Enable)**. Check it again to bring the notch back.
 
-### 选项一览
+### All options
 
-| 选项 | 默认值 | 说明 |
+| Option (popup label) | Default | Description |
 |---|---|---|
-| 启用 | 开 | 总开关 |
-| 机型 | 自动识别 | 根据页面上的设备名自动识别；识别不到或不准时手动选择（只对当前标签页生效） |
-| 方向 | 自动 | 自动 / 强制竖屏 / 横屏（刘海在左）/ 横屏（刘海在右） |
-| 刘海不透明度 | 100% | 调低后刘海变半透明 |
-| 屏幕圆角 | 关 | 控制台已自带圆角；打开后按真机圆角遮住四角 |
-| 圆角颜色 | 黑色 | 黑色或控制台外框色 |
+| 启用 — Enable | On | Master switch |
+| 机型 — Model | 自动识别 (auto-detect) | Detected from the device name on the page. If detection fails or picks the wrong model, choose one manually (applies to the current tab only) |
+| 方向 — Orientation | 自动 (auto) | Auto / 强制竖屏 (force portrait) / 横屏（刘海在左）(landscape, cutout on left) / 横屏（刘海在右）(landscape, cutout on right) |
+| 刘海不透明度 — Cutout opacity | 100% | Lower it to make the notch semi-transparent |
+| 屏幕圆角 — Screen corners | Off | The console already rounds the corners. Turn this on to mask the corners with the real device's corner radius |
+| 圆角颜色 — Corner color | 黑色 (black) | Black, or the console's frame color |
 
 ---
 
-## 常见问题
+## FAQ
 
-**装好了但会话页面上什么都没有？**
-- 确认会话在 **us-west-2** 区域，地址以 `https://us-west-2.console.aws.amazon.com/devicefarm/` 开头。
-- 确认 `chrome://extensions` 里插件卡片右下角的开关是打开的。
-- 按 `F5` 刷新会话页面。
-- 打开插件弹窗看顶部的状态栏：如果显示「当前页面未注入」，说明当前页面不是 Device Farm 会话页。
+**I installed it, but nothing appears on the session page.**
+- Make sure the session is in **us-west-2**: the URL starts with `https://us-west-2.console.aws.amazon.com/devicefarm/`.
+- In `chrome://extensions`, make sure the toggle at the bottom right of the extension card is on.
+- Refresh the session page with `F5`.
+- Open the popup and check the status line at the top. If it says "当前页面未注入" (not active on this page), the current tab is not a Device Farm session page.
 
-**怎么升级到新版本？**
-下载新版 zip，解压后覆盖原文件夹，再到 `chrome://extensions` 点插件卡片上的刷新按钮 ↻。
+**How do I update to a new version?**
+Download and unzip the new version over the old folder. Then, in `chrome://extensions`, click the reload button ↻ on the extension card.
 
-**怎么卸载？**
-在 `chrome://extensions` 里点插件卡片上的「移除（Remove）」。
+**How do I uninstall it?**
+In `chrome://extensions`, click **Remove** on the extension card.
 
-**会影响我在画面上的点击吗？**
-不会。叠加层不接收任何鼠标事件，点到刘海的位置也会照常传给设备。
+**Does it affect my clicks on the live screen?**
+No. The overlay ignores all mouse events, so clicks on the notch area still go to the device.
 
 ---
 
-## 支持的机型（目前只支持 iPhone）
+## Supported devices (iPhone only for now)
 
-| 类型 | 机型 |
+| Type | Models |
 |---|---|
-| Dynamic Island | 14 Pro / 14 Pro Max、15 系列、16 系列、17 系列、iPhone Air、18 Pro / 18 Pro Max |
-| 刘海 | X / XS / XS Max / XR、11 系列、12 系列、13 系列、14 / 14 Plus、16e |
-| 无刘海 | SE（2/3 代）、8、7、6s |
+| Dynamic Island | 14 Pro / 14 Pro Max, 15 series, 16 series, 17 series, iPhone Air, 18 Pro / 18 Pro Max |
+| Notch | X / XS / XS Max / XR, 11 series, 12 series, 13 series, 14 / 14 Plus, 16e |
+| No notch | SE (2nd/3rd gen), 8, 7, 6s |
 
-表里没有的新款 iPhone（编号 ≥ 18）会按尺寸档位套用 18 Pro / 18 Pro Max 的参数。Android 设备目前不支持。
+iPhone models that aren't in the table yet (number 18 or later) fall back to the 18 Pro or 18 Pro Max profile, depending on screen size. Android devices are not supported yet.
 
-## 局限
+## Limitations
 
-- 刘海 / 岛的尺寸是根据公开资料和实机截图得出的近似值，误差约 1–3pt。iPhone 16 已对照真机画面校准。
-- iPhone 18 Pro 系列的岛更小，Apple 没有公布尺寸，目前的宽度是按公开实拍测量估算的。
-- 有些全屏内容（例如上下留黑边的竖屏视频）可能被误判成「被裁剪的横屏」，这时可以在「方向」里选「强制竖屏」。
-- 插件依赖 Device Farm 控制台页面的结构。控制台改版后可能需要更新插件（插件内置了按画面形状自动识别的兜底逻辑）。
+- Notch and Dynamic Island sizes are approximations based on public sources and real-device screenshots, accurate to about 1–3 pt. iPhone 16 has been calibrated against a real Device Farm session.
+- The iPhone 18 Pro models have a smaller Dynamic Island. Apple hasn't published its size, so the current width is estimated from published hands-on measurements.
+- Some full-screen content (for example a portrait video with black bars at the top and bottom) can be mistaken for a cropped landscape screen. If that happens, set **方向 (Orientation)** to **强制竖屏 (force portrait)**.
+- The extension depends on the structure of the Device Farm console page. If the console is redesigned, the extension may need an update (it falls back to finding the device screen by its shape).
 
-## 开发与测试
+## Development and testing
 
-插件本身不需要构建。仓库里有一个本地模拟会话页，可以用 Playwright 加载插件做回归测试，不需要 AWS 账号：
+The extension needs no build step. The repo includes a local mock session page, so you can run a regression test with Playwright without an AWS account:
 
 ```bash
 npm install
 npx playwright install chromium
-npm test                    # 回归测试，截图输出到 test-output/
-npm run docs:screenshots    # 重新生成 README 截图到 docs/images/（需要系统装有中文字体）
+npm test                    # regression test; screenshots go to test-output/
+npm run docs:screenshots    # regenerate README screenshots into docs/images/{en,zh}/ (needs a CJK font installed)
 ```
 
-README 中的截图由 `test/make-docs-screenshots.cjs` 生成：设备画面来自真机截图，控制台页面是模拟页，插件是真实加载运行的。
+The README screenshots are produced by `test/make-docs-screenshots.cjs`. The device screen images come from real device screenshots, the console page is the mock page, and the extension is actually loaded and running.
 
-机型参数在 `extension/devices.js`（竖屏逻辑坐标，单位 pt）。欢迎提 Issue / PR 补充或校准机型。
+Device profiles live in `extension/devices.js` (portrait logical coordinates, in pt). Issues and PRs that add or calibrate models are welcome.
 
 ## License
 
 [MIT](LICENSE)
 
-本项目不是 AWS 官方产品，与 Amazon Web Services 和 Apple 无隶属关系。
+This project is not an official AWS product and is not affiliated with Amazon Web Services or Apple.
