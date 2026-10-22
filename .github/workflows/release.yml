@@ -1,0 +1,55 @@
+name: Release zip
+
+# Builds devicefarm-notch-overlay-<tag>.zip (extension + LICENSE + READMEs)
+# and attaches it to the GitHub Release for that tag.
+# Runs on tag push (v*), or manually for an existing tag.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Existing tag to package, e.g. v0.1.0'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Resolve tag
+        id: tag
+        run: echo "tag=${INPUT_TAG:-$GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
+        env:
+          INPUT_TAG: ${{ inputs.tag }}
+
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ steps.tag.outputs.tag }}
+
+      - name: Check manifest version matches tag
+        run: |
+          v=$(jq -r .version extension/manifest.json)
+          [ "v$v" = "$TAG" ] || { echo "manifest.json version $v does not match tag $TAG"; exit 1; }
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+
+      - name: Build zip
+        run: |
+          mkdir -p dist/devicefarm-notch-overlay
+          cp extension/* LICENSE README*.md dist/devicefarm-notch-overlay/
+          cd dist && zip -r "devicefarm-notch-overlay-$TAG.zip" devicefarm-notch-overlay
+          unzip -l "devicefarm-notch-overlay-$TAG.zip"
+        env:
+          TAG: ${{ steps.tag.outputs.tag }}
+
+      - name: Create release if missing, then upload zip
+        run: |
+          gh release view "$TAG" >/dev/null 2>&1 || gh release create "$TAG" --title "$TAG" --generate-notes
+          gh release upload "$TAG" "dist/devicefarm-notch-overlay-$TAG.zip" --clobber
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ steps.tag.outputs.tag }}
