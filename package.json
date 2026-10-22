@@ -5,7 +5,8 @@
   "description": "Chrome/Edge extension that overlays the iPhone notch / Dynamic Island on AWS Device Farm remote access sessions",
   "license": "MIT",
   "scripts": {
-    "test": "node test/run-mock-test.cjs"
+    "test": "node test/run-mock-test.cjs",
+    "docs:screenshots": "node test/make-docs-screenshots.cjs"
   },
   "devDependencies": {
     "playwright": "^1.48.0"
