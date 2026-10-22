@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Device Farm Notch Overlay",
+  "version": "0.1.0",
+  "description": "在 AWS Device Farm 远程访问画面上叠加 iPhone 刘海 / Dynamic Island（仅视觉，不拦截点击）",
+  "minimum_chrome_version": "102",
+  "permissions": ["storage"],
+  "background": { "service_worker": "background.js" },
+  "action": { "default_popup": "popup.html", "default_title": "Device Farm Notch Overlay" },
+  "content_scripts": [
+    {
+      "matches": ["https://us-west-2.console.aws.amazon.com/devicefarm/*"],
+      "js": ["devices.js", "content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

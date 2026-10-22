@@ -1,0 +1,127 @@
+<!doctype html>
+<!-- 模仿 Device Farm 控制台远程会话页（DOM 结构按真实 iPhone 16 竖屏会话实测还原）。
+     画面用实测设备截图 fixtures/probe-portrait-screen.png（横屏用 fixtures/mcp-screenshot-landscape-2556x1178.png）；Rotate 模拟实测的"横屏帧画进竖屏 canvas、左右被裁"行为。
+     测试辅助：window.__touches（触控层收到的点击）、__shiftLayout()（模拟 flash 条把画面下推 56px）、__wide(true|false)（模拟横向 canvas）。
+     ?model=iPhone%2013 可换机型。 -->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Running on Apple iPhone 16 | Remote Access Session | Device Farm</title>
+    <style>
+      body { margin: 0; font: 14px Arial, sans-serif; background: #fafafa; }
+      header { height: 52px; background: #161d26; }
+      #flash { display: none; height: 56px; background: #d91515; color: #fff; line-height: 56px; padding-left: 16px; }
+      .canvas-container { position: relative; text-align: center; padding-top: 50px; }
+      .device-screen-with-actions { display: inline-flex; gap: 16px; align-items: flex-start; }
+      .session-action-bar-icons { display: flex; flex-direction: column; border: 1px solid #ccc; border-radius: 8px; background: #fff; padding: 8px; }
+      .session-action-bar-icons button { margin: 4px 0; padding: 6px 12px; cursor: pointer; }
+      .device-screen-wrapper { display: inline-block; }
+      .awsui_d-none { display: none; }
+      #device { height: 20em; width: 20em; }
+      .visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+    </style>
+  </head>
+  <body>
+    <header></header>
+    <div id="flash">Failed to set the default orientation of the device to Landscape.</div>
+    <h1 style="margin: 16px 24px; font-size: 24px">Running on Apple iPhone 16 (OS 18.0)</h1>
+    <div class="canvas-container">
+      <div class="center-text">
+        <div>
+          <div class="device-screen-with-actions">
+            <div class="session-action-bar-icons">
+              <button data-testid="remote-access-session-home-button" aria-label="Home" title="Home">Home</button>
+              <button data-testid="remote-access-session-rotate-button" aria-label="Rotate" title="Rotate">Rotate</button>
+            </div>
+            <div class="device-screen-wrapper" style="visibility: visible; opacity: 1; position: relative; height: auto; overflow: visible">
+              <div id="device-connecting" class="remoteaccess-device-connecting" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #000; color: #fff; z-index: 6">
+                <p><strong>Connecting...</strong></p>
+              </div>
+              <canvas id="device" role="img" aria-label="Live screen of Apple iPhone 16" width="554" height="1200"
+                style="width: 100%; height: auto; max-height: calc(-200px + 100vh); object-fit: contain; clip-path: inset(0px 0.001px round 14px); position: relative; z-index: 2">Live screen of Apple iPhone 16</canvas>
+              <div id="device-border-overlay" style="position: absolute; border-radius: 24px; border: 10px solid rgb(35, 47, 62); box-shadow: rgba(0, 0, 0, 0.25) 0px 4px 16px; pointer-events: none; z-index: 5; box-sizing: border-box; opacity: 1"></div>
+              <canvas id="device-touch-feedback" class="remoteaccess-device-touch-feedback" aria-label="Remote control for Apple iPhone 16" tabindex="0" style="pointer-events: auto; position: absolute; top: 0px; left: 0px; z-index: 3"></canvas>
+            </div>
+            <div id="device-keyboard-hint" class="visually-hidden">Press Enter to send keystrokes to Apple iPhone 16.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script>
+      const model = new URLSearchParams(location.search).get('model');
+      const dev = document.getElementById('device');
+      const touch = document.getElementById('device-touch-feedback');
+      const border = document.getElementById('device-border-overlay');
+      if (model) {
+        dev.setAttribute('aria-label', 'Live screen of Apple ' + model);
+        touch.setAttribute('aria-label', 'Remote control for Apple ' + model);
+        document.title = 'Running on Apple ' + model + ' | Remote Access Session | Device Farm';
+        document.querySelector('h1').textContent = 'Running on Apple ' + model;
+      }
+      const portrait = new Image();
+      portrait.src = '/__fixtures/probe-portrait-screen.png';
+      const landscape = new Image();
+      landscape.src = '/__fixtures/mcp-screenshot-landscape-2556x1178.png';
+      let rotated = false;
+      let wide = false;
+
+      function paint() {
+        const ctx = dev.getContext('2d');
+        ctx.fillStyle = '#000';
+        ctx.fillRect(0, 0, dev.width, dev.height);
+        if (wide) {
+          ctx.drawImage(landscape, 0, 0, dev.width, dev.height);
+        } else if (rotated) {
+          // 实测：横屏帧按长边→1200 缩放，垂直居中，左右裁掉
+          const s = 1200 / 2556, w = 2556 * s, h = 1178 * s;
+          ctx.drawImage(landscape, (dev.width - w) / 2, (dev.height - h) / 2, w, h);
+        } else {
+          ctx.drawImage(portrait, 0, 0, dev.width, dev.height);
+        }
+      }
+      function layout() {
+        const w = dev.offsetWidth, h = dev.offsetHeight;
+        Object.assign(border.style, { top: '-8px', left: '-8px', width: w + 16 + 'px', height: h + 16 + 'px' });
+        touch.width = Math.round(w);
+        touch.height = Math.round(h);
+      }
+      window.__touches = [];
+      touch.addEventListener('pointerdown', e => {
+        const r = touch.getBoundingClientRect();
+        window.__touches.push({ x: e.clientX - r.left, y: e.clientY - r.top });
+        const ctx = touch.getContext('2d');
+        ctx.clearRect(0, 0, touch.width, touch.height);
+        ctx.fillStyle = 'rgba(255,0,0,.6)';
+        ctx.beginPath();
+        ctx.arc(e.clientX - r.left, e.clientY - r.top, 10, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      document.querySelector('[title="Home"]').onclick = () => { rotated = false; paint(); };
+      document.querySelector('[title="Rotate"]').onclick = () => {
+        rotated = !rotated;
+        document.getElementById('flash').style.display = rotated ? 'block' : 'none';
+        paint();
+      };
+      window.__shiftLayout = () => { document.getElementById('flash').style.display = 'block'; };
+      window.__wide = on => {
+        wide = on;
+        [dev.width, dev.height] = on ? [1200, 554] : [554, 1200];
+        dev.style.maxHeight = on ? '400px' : 'calc(-200px + 100vh)';
+        dev.style.width = on ? '866px' : '100%';
+        layout();
+        paint();
+      };
+      Promise.all([portrait.decode(), landscape.decode()]).then(() => {
+        setTimeout(() => {
+          // 连接完成：与真实页面一样，加 is-connected 并隐藏 Connecting 遮罩
+          dev.style.width = '100%';
+          dev.classList.add('is-connected');
+          document.getElementById('device-connecting').classList.add('awsui_d-none');
+          paint();
+          layout();
+        }, 300);
+      });
+      new ResizeObserver(layout).observe(dev);
+    </script>
+  </body>
+</html>

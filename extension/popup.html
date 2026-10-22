@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { width: 280px; margin: 0; padding: 12px; font: 13px/1.5 system-ui, sans-serif; color: #16191f; }
+      h1 { font-size: 14px; margin: 0 0 8px; }
+      label { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 6px 0; }
+      select, input[type='range'] { width: 150px; }
+      #status { padding: 6px 8px; background: #f2f3f3; border-radius: 4px; margin-bottom: 8px; word-break: break-all; }
+      .hint { color: #5f6b7a; font-size: 12px; margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <h1>Device Farm 刘海叠加</h1>
+    <div id="status">读取中…</div>
+    <label>启用 <input type="checkbox" id="enabled" /></label>
+    <label>机型 <select id="device"><option value="">自动识别</option></select></label>
+    <label>方向
+      <select id="orientation">
+        <option value="auto">自动</option>
+        <option value="portrait">强制竖屏</option>
+        <option value="landscape-left">横屏（刘海在左）</option>
+        <option value="landscape-right">横屏（刘海在右）</option>
+      </select>
+    </label>
+    <label>刘海不透明度 <input type="range" id="opacity" min="0.2" max="1" step="0.1" /></label>
+    <label>屏幕圆角 <input type="checkbox" id="showCorners" /></label>
+    <label>圆角颜色
+      <select id="cornerColor">
+        <option value="black">黑色</option>
+        <option value="bezel">外框色 #232f3e</option>
+      </select>
+    </label>
+    <div class="hint">仅视觉叠加，点击会穿透到设备。目前只收录 iPhone。</div>
+    <script src="devices.js"></script>
+    <script src="popup.js"></script>
+  </body>
+</html>
